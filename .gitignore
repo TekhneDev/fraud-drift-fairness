@@ -1,5 +1,6 @@
 target/
 results/
+results_sintetico/
 data/
 *.csv
 !src/test/resources/**/*.csv

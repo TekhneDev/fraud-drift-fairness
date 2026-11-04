@@ -10,6 +10,26 @@ O núcleo é Java 21 puro, sem dependências de runtime: tudo o que gera um núm
 
 ---
 
+## Teste rápido (sem baixar o BAF)
+
+```bash
+git clone https://github.com/TekhneDev/fraud-drift-fairness.git
+cd fraud-drift-fairness
+scripts/demo.sh
+```
+
+O script compila o projeto e roda os testes, gera um CSV sintético com as colunas do BAF e um drift conhecido no mês 5, roda as 7 estratégias e abre o painel em <http://localhost:8000/viewer/>. Leva poucos minutos e só precisa de JDK 21, Maven e Python 3 (este último apenas para servir o painel).
+
+| Opção | Padrão | Efeito |
+|---|---|---|
+| `--rows N` | `200000` | tamanho do CSV sintético |
+| `--seeds LISTA` | `1,2,3` | sementes |
+| `--port P` | `8000` | porta do painel |
+| `--no-serve` | — | só gera os resultados, sem subir o painel |
+| `--skip-tests` | — | compila sem rodar os testes |
+
+**Os números da demonstração são sintéticos: validam o pipeline, não servem para o artigo.** Para reproduzir o artigo, siga as seções abaixo com o `Base.csv` real.
+
 ## 1. Requisitos
 
 - JDK 21 ou superior
@@ -74,6 +94,18 @@ O gerador cria um CSV com as mesmas colunas do BAF e um drift conhecido no mês 
 
 Os CSVs usam ponto decimal e campo vazio para métrica indefinida, e abrem diretamente em Python (pandas), R ou Power BI.
 
+### Visualizador
+
+Abra `viewer/index.html` no navegador (sem servidor nem dependências) e arraste `summary.csv` e, opcionalmente, `drift_events.csv`. O painel mostra, mês a mês e por estratégia:
+
+- AUC, recall a 5% de FPR e razões de FPR/TPR entre faixas etárias, com faixa de ±1 desvio-padrão entre seeds;
+- alternância entre o ponto de operação oráculo e o implantado (limiar herdado do mês anterior);
+- tabela com a média nos meses de teste e contagem de alarmes de drift por mês.
+
+Os arquivos são lidos localmente pelo navegador; nada é enviado para fora.
+
+Servindo a pasta do projeto (`python3 -m http.server 8000 --bind 127.0.0.1`) e abrindo `http://localhost:8000/viewer/`, a página carrega sozinha `results/` (ou, se não existir, `results_sintetico/`). Outra pasta: `?dados=../minha_pasta`.
+
 ## 5. Desenho experimental
 
 **Protocolo prequential.** Os meses 0 a 2 treinam o modelo inicial, idêntico para todas as estratégias. Nos meses 3 a 7, cada solicitação é primeiro prevista e só depois tem o rótulo revelado. Como o BAF não informa a ordem dentro do mês, as linhas são embaralhadas dentro de cada mês com uma semente; cinco sementes medem a variabilidade.
@@ -117,6 +149,7 @@ src/main/java/br/mestrado/frauddrift/
 └── synthetic/   gerador de dados sintéticos para validação
 src/moa/java/    adaptador opcional para classificadores do MOA
 src/test/java/   26 testes (métricas, detectores, vazamento de dados, ponta a ponta)
+viewer/          index.html: painel estático para os CSVs de saída
 ```
 
 ## 7. Classificadores do MOA (opcional)
@@ -134,6 +167,7 @@ Adiciona a Adaptive Random Forest e a Hoeffding Adaptive Tree como referências 
 - O encoder e o modelo inicial usam apenas os meses de aquecimento (sem vazamento do futuro).
 - `config.txt` registra parâmetros, versão do Java e a lista exata de features.
 - Para a análise de sensibilidade dos detectores: `scripts/sensitivity.sh data/Base.csv`.
+- Para validar o pipeline sem o BAF: `scripts/demo.sh` (ver "Teste rápido").
 
 ## 9. Limitações conhecidas
 
