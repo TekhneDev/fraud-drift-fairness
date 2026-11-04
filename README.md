@@ -74,6 +74,18 @@ O gerador cria um CSV com as mesmas colunas do BAF e um drift conhecido no mês 
 
 Os CSVs usam ponto decimal e campo vazio para métrica indefinida, e abrem diretamente em Python (pandas), R ou Power BI.
 
+### Visualizador
+
+Abra `viewer/index.html` no navegador (sem servidor nem dependências) e arraste `summary.csv` e, opcionalmente, `drift_events.csv`. O painel mostra, mês a mês e por estratégia:
+
+- AUC, recall a 5% de FPR e razões de FPR/TPR entre faixas etárias, com faixa de ±1 desvio-padrão entre seeds;
+- alternância entre o ponto de operação oráculo e o implantado (limiar herdado do mês anterior);
+- tabela com a média nos meses de teste e contagem de alarmes de drift por mês.
+
+Os arquivos são lidos localmente pelo navegador; nada é enviado para fora.
+
+Servindo a pasta do projeto (`python3 -m http.server 8000 --bind 127.0.0.1`) e abrindo `http://localhost:8000/viewer/`, a página carrega sozinha `results/` (ou, se não existir, `results_sintetico/`). Outra pasta: `?dados=../minha_pasta`.
+
 ## 5. Desenho experimental
 
 **Protocolo prequential.** Os meses 0 a 2 treinam o modelo inicial, idêntico para todas as estratégias. Nos meses 3 a 7, cada solicitação é primeiro prevista e só depois tem o rótulo revelado. Como o BAF não informa a ordem dentro do mês, as linhas são embaralhadas dentro de cada mês com uma semente; cinco sementes medem a variabilidade.
@@ -117,6 +129,7 @@ src/main/java/br/mestrado/frauddrift/
 └── synthetic/   gerador de dados sintéticos para validação
 src/moa/java/    adaptador opcional para classificadores do MOA
 src/test/java/   26 testes (métricas, detectores, vazamento de dados, ponta a ponta)
+viewer/          index.html: painel estático para os CSVs de saída
 ```
 
 ## 7. Classificadores do MOA (opcional)
